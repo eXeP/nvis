@@ -12,6 +12,7 @@ from pathlib import Path
 # TODO add support for np array here (np.array) -> torch.tensor
 # TODO add support for pil image here
 # TODO add support for hist and plot using matplotlib
+# TODO add exr-support for hdr-valued
 
 def retrieve_name(var):
     callers_local_vars = inspect.currentframe().f_back.f_back.f_locals.items()
