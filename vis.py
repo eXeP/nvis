@@ -16,7 +16,11 @@ from pathlib import Path
 
 def retrieve_name(var):
     callers_local_vars = inspect.currentframe().f_back.f_back.f_locals.items()
-    return [var_name for var_name, var_val in callers_local_vars if var_val is var][0]
+    names = [var_name for var_name, var_val in callers_local_vars if var_val is var]
+    if len(names) == 0:
+        return None
+    else:
+        return names[0]
 
 def save_single(tensor, name, vis_dir):
     save_path = vis_dir / name
@@ -58,8 +62,20 @@ def vis(*tensors, normalize=None, bidx=0, append=False):
     (nvis_path / 'vis').mkdir(exist_ok=True)
 
     streams = []
+    nameless_tensor_idx = 0
+    if append == True and (nvis_path /'vis/nvis_config.json').exists():
+        prev_config = json.load(open(Path(nvis_path) / 'vis/nvis_config.json', 'r'))
+        for stream in prev_config['streams']:
+            if 'VISDBG_' in stream['name']:
+                prev_nameless_idx = int(stream['name'].replace('VISDBG_', ''))
+                nameless_tensor_idx = max(nameless_tensor_idx, prev_nameless_idx+1)
+        
     for tensor in tensors:
         tensor_name = retrieve_name(tensor)
+        if tensor_name == None:
+            tensor_name = "VISDBG_{:2d}".format(nameless_tensor_idx)
+            nameless_tensor_idx += 1
+
         if not normalize:
             t_min = tensor.min()
             t_max = tensor.max()
