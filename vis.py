@@ -5,6 +5,7 @@ import torch
 import torchvision
 import json
 import subprocess
+import random
 
 from pathlib import Path
 
@@ -54,7 +55,46 @@ def start_http_server(nvis_path):
         subprocess.Popen(nvis_server_command, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     )
 
-def vis(*tensors, normalize=None, bidx=0, append=False):
+
+def plot(*lists):
+    nvis_path = Path(os.path.dirname(os.path.realpath(__file__)))
+    (nvis_path / 'vis').mkdir(exist_ok=True)
+
+    # Imports here so plt is not needed for torch plotting
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from typing import List
+
+    plt.clf()
+    streams = []
+    nameless_tensor_idx = 0
+    for list in lists:
+        list_name = retrieve_name(list)
+        if list_name == None:
+            list_name = "VISDBG_{:2d}".format(nameless_tensor_idx)
+            nameless_tensor_idx += 1
+        if type(list) == List:
+            list = np.array(list)
+        plt.plot(np.arange(len(list)), list, '--o', label=list_name)
+    plt.legend(loc="best")
+    plt.savefig(nvis_path / 'vis/plot.png')
+    
+    stream = {
+        'name': 'plot',
+        'window': True,
+        'images': ['vis/plot.png']
+    }
+    streams.append(stream)
+    nvis_config = {
+            'name': 'vis-script for plotting',
+            'streams': streams,
+        }
+    with open(Path(nvis_path) / 'vis/nvis_config.json', 'w') as f:
+        f.write(json.dumps(nvis_config))
+    
+    start_http_server(nvis_path)
+
+def vis(*tensors, normalize=None, bidx=0, append=False, name=None):
     """
     Writes tensors to disk as nvis streams and starts a http server to display them
     """
@@ -71,7 +111,10 @@ def vis(*tensors, normalize=None, bidx=0, append=False):
                 nameless_tensor_idx = max(nameless_tensor_idx, prev_nameless_idx+1)
         
     for tensor in tensors:
-        tensor_name = retrieve_name(tensor)
+        if len(tensors) == 1 and name != None:
+            tensor_name = name
+        else:
+            tensor_name = retrieve_name(tensor)
         if tensor_name == None:
             tensor_name = "VISDBG_{:2d}".format(nameless_tensor_idx)
             nameless_tensor_idx += 1
@@ -97,8 +140,9 @@ def vis(*tensors, normalize=None, bidx=0, append=False):
             vis_range = range(bs)
         else:
             vis_range = [bidx]
+        tensor_id = random.randint(0, 10000000000)
         for bs_i in vis_range:
-            rel_path = save_single(normalize(tensor[bs_i:bs_i+1]), 'vis/{}_{:04d}.png'.format(tensor_name, bs_i), nvis_path)
+            rel_path = save_single(normalize(tensor[bs_i:bs_i+1]), 'vis/{}_{:12d}_{:04d}.png'.format(tensor_name, tensor_id,  bs_i), nvis_path)
             images.append(str(rel_path))
         
         stream = {
