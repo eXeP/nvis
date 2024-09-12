@@ -6198,7 +6198,7 @@ YH5TbD+cNrTGp556irMfd9BtBQnDb3HkHuGRRx5h/6TgEgCIAp1I3759Y6WCq+zPd8LNjraCH6KTYgf7
 
         setStreamPxDimensions(pxDimensions) {
             if (this.streamPxDimensions !== undefined && pxDimensions.w != this.streamPxDimensions.w && pxDimensions.h != this.streamPxDimensions.h) {
-                alert('New stream size mismatch!');
+                console.log('New stream size mismatch!');
             }
             this.streamPxDimensions = pxDimensions;
         }
