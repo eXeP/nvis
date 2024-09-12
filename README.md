@@ -48,6 +48,21 @@ To create a static *nvis* page with streams and shaders, insert API commands wit
 </body>
 ```
 
+## Torch vis-script
+Meant to be used from IPython shell, starts a nvis window at localhost:8088
+```
+from IPython import embed; embed()
+%run /home/exep/research/nvis/vis.py
+vis(tensorA, tensorB)
+```
+
+Can be used without IPython shell like this:
+```
+import sys; sys.path.insert(0, '/home/exep/research/nvis'); from vis import *
+vis(tensor_here)
+vis(tensor_here, append=True)
+```
+
 ## Resources
 
 * [Technical Introduction to OpenEXR](https://openexr.readthedocs.io/en/latest/TechnicalIntroduction.html)

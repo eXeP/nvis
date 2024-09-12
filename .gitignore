@@ -1,3 +1,4 @@
 #  project ignores
 *-extension.zip
 vis/
+__pycache__/
