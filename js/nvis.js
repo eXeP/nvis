@@ -5209,7 +5209,8 @@ var nvis = new function () {
             let gl = this.glContext;
             let numFilesLoaded = 0;
             let self = this;
-
+            
+            self.textures = Array(fileNames.length).fill(0)
             for (let fileId = 0; fileId < fileNames.length; fileId++) {
 
                 let fileName = fileNames[fileId];
@@ -5239,7 +5240,7 @@ var nvis = new function () {
 
                             if (file.bSuccess) {
                                 let texture = gl.createTexture();
-                                self.textures.push(texture);
+                                self.textures[fileId] = texture;
                 
                                 self.setupTexture(texture, file.toFloatArray(), true, file.dimensions);
 
@@ -5247,6 +5248,7 @@ var nvis = new function () {
                                     self.setDimensions(file.dimensions);
                                     windows.setStreamPxDimensions(file.dimensions);
                                     windows.adjust();
+                                    _state.animation.setNumFrames(Math.max(_state.animation.numFrames, numFilesLoaded));
                                 }
                             }
                         } else {
@@ -5259,11 +5261,10 @@ var nvis = new function () {
 
                     const image = new Image();
                     image.src = fileNames[fileId];
-
                     image.onload = function () {
                         numFilesLoaded++;
                         let texture = gl.createTexture();
-                        self.textures.push(texture);
+                        self.textures[fileId] = texture;
                         self.setupTexture(texture, image);
 
                         if (numFilesLoaded == fileNames.length) {
@@ -5272,13 +5273,13 @@ var nvis = new function () {
                             //callback(self.dimensions);
                             windows.setStreamPxDimensions(dimensions);
                             windows.adjust();
+                            _state.animation.setNumFrames(Math.max(_state.animation.numFrames, numFilesLoaded));
                         }
                     }
 
                 }
             }
-
-            _state.animation.setNumFrames(numFilesLoaded);
+            
         }
 
 
@@ -5289,7 +5290,7 @@ var nvis = new function () {
             let gl = this.glContext;
             let numFilesLoaded = 0;
             let self = this;
-
+            
             for (let fileId = 0; fileId < files.length; fileId++) {
                 if (!files[fileId].type.match(/image.*/) && !files[fileId].type.match(/video.*/) && !files[0].name.match(/.exr$/) && !files[0].name.match(/.pfm$/)) {
                     continue;
@@ -7797,7 +7798,6 @@ YH5TbD+cNrTGp556irMfd9BtBQnDb3HkHuGRRx5h/6TgEgCIAp1I3759Y6WCq+zPd8LNjraCH6KTYgf7
             this.helpPopup.innerHTML += '<br/>';
             this.helpPopup.innerHTML += 'Tab - open user interface, to manipulate settings, streams, and shaders<br/>';
             this.helpPopup.innerHTML += 'h - hold to show the list of keyboard shortcut commands<br/>';
-            this.helpPopup.innerHTML += 'o - open file input dialog<br/>';
             this.helpPopup.innerHTML += 'Space - toggle animation<br/>';
             this.helpPopup.innerHTML += 'p - toggle ping-pong during animation<br/>';
             this.helpPopup.innerHTML += 'Arrow Left/Right - step one frame forward/backwards<br/>';
@@ -8702,7 +8702,7 @@ YH5TbD+cNrTGp556irMfd9BtBQnDb3HkHuGRRx5h/6TgEgCIAp1I3759Y6WCq+zPd8LNjraCH6KTYgf7
                 newStream.setupTexture(texture, frame, false, dimensions);
             }
             this.streams.push(newStream);
-            _state.animation.setNumFrames(newStream.getNumImages());  //  TODO: check
+            _state.animation.setNumFrames(Math.max(_state.animation.numFrames, newStream.getNumImages()));  //  TODO: check
             this.addWindow(this.streams.length - 1);
             this.windows.setStreamPxDimensions(dimensions);
             this.windows.adjust();
@@ -8751,11 +8751,11 @@ YH5TbD+cNrTGp556irMfd9BtBQnDb3HkHuGRRx5h/6TgEgCIAp1I3759Y6WCq+zPd8LNjraCH6KTYgf7
                 files.sort(function (a, b) {
                     return a.name.localeCompare(b.name);
                 });
-                if (shiftDown) {
+                if (!shiftDown) {
                     let newStream = new NvisStream(this.glContext);
                     newStream.drop(files, this.windows);
                     this.streams.push(newStream);
-                    _state.animation.setNumFrames(newStream.getNumImages());  //  TODO: check
+                    _state.animation.setNumFrames(Math.max(_state.animation.numFrames, newStream.getNumImages()));  //  TODO: check
                     this.addWindow(this.streams.length - 1);
                 } else {
                     for (let i = 0; i < files.length; i++) {
@@ -8969,7 +8969,7 @@ YH5TbD+cNrTGp556irMfd9BtBQnDb3HkHuGRRx5h/6TgEgCIAp1I3759Y6WCq+zPd8LNjraCH6KTYgf7
             newStream.load(fileNames, this.windows);
 
             //  TODO: fix this
-            _state.animation.setNumFrames(newStream.getNumImages());
+            _state.animation.setNumFrames(Math.max(_state.animation.numFrames, newStream.getNumImages()));
 
             this.streams.push(newStream);
             this.windows.adjust();

@@ -12,8 +12,10 @@ from pathlib import Path
 
 # TODO add support for np array here (np.array) -> torch.tensor
 # TODO add support for pil image here
-# TODO add support for hist and plot using matplotlib
+# TODO add support for hist using matplotlib
 # TODO add exr-support for hdr-valued
+# TODO add whot() like support
+
 
 def retrieve_name(var):
     callers_local_vars = inspect.currentframe().f_back.f_back.f_locals.items()
@@ -116,7 +118,7 @@ def vis(*tensors, normalize=None, bidx=0, append=False, name=None):
         else:
             tensor_name = retrieve_name(tensor)
         if tensor_name == None:
-            tensor_name = "VISDBG_{:2d}".format(nameless_tensor_idx)
+            tensor_name = "VISDBG_{:02d}".format(nameless_tensor_idx)
             nameless_tensor_idx += 1
 
         if not normalize:
@@ -124,7 +126,7 @@ def vis(*tensors, normalize=None, bidx=0, append=False, name=None):
             t_max = tensor.max()
             if t_min >= 0.0 and t_max <= 1.0 or tensor.dtype == torch.uint8:
                 normalize = lambda x: x
-            elif t_min >= -1.1 and t_max <= 1.1: # [-1, 1] with overshoots
+            elif t_min >= -1.4 and t_max <= 1.4: # [-1, 1] with overshoots
                 normalize = lambda x: x.add(1).div(2).clamp(0, 1)
             else:
                 normalize = lambda x: x.sigmoid()
@@ -142,7 +144,7 @@ def vis(*tensors, normalize=None, bidx=0, append=False, name=None):
             vis_range = [bidx]
         tensor_id = random.randint(0, 10000000000)
         for bs_i in vis_range:
-            rel_path = save_single(normalize(tensor[bs_i:bs_i+1]), 'vis/{}_{:12d}_{:04d}.png'.format(tensor_name, tensor_id,  bs_i), nvis_path)
+            rel_path = save_single(normalize(tensor[bs_i:bs_i+1]), 'vis/{}_{:012d}_{:04d}.png'.format(tensor_name, tensor_id,  bs_i), nvis_path)
             images.append(str(rel_path))
         
         stream = {
