@@ -117,8 +117,8 @@ var nvis = new function () {
         animation: {
             active: false,
             performance: false,
-            fps: 60,
-            pingPong: true,
+            fps: 24,
+            pingPong: false,
             direction: 1,
             frameId: 0,
             numFrames: 1,  //  TODO: fix this!
@@ -5426,6 +5426,19 @@ var nvis = new function () {
             return name;
         }
 
+		//  Returns the display name for the given frame id.
+		//  For image streams, this shows the current image filename instead of the first one.
+		getNameForFrame(frameId, shaderGraphs) {
+			if (this.fileNames.length > 0) {
+				let index = 0;
+				if (typeof frameId === 'number' && this.fileNames.length > 0) {
+					index = ((frameId % this.fileNames.length) + this.fileNames.length) % this.fileNames.length;
+				}
+				return this.fileNames[index];
+			}
+			return this.getName(shaderGraphs);
+		}
+
 
         getNumImages = function () {
             return this.textures.length;
@@ -6936,7 +6949,7 @@ YH5TbD+cNrTGp556irMfd9BtBQnDb3HkHuGRRx5h/6TgEgCIAp1I3759Y6WCq+zPd8LNjraCH6KTYgf7
                 return;
             }
 
-            this.infoDiv.innerHTML = (_windowsUI.bStreamNames.value ? stream.getName(shaderGraphs) : '');
+			this.infoDiv.innerHTML = (_windowsUI.bStreamNames.value ? stream.getNameForFrame(frameId, shaderGraphs) : '');
 
             let shaderId = stream.shaderId;
 
@@ -8748,15 +8761,16 @@ YH5TbD+cNrTGp556irMfd9BtBQnDb3HkHuGRRx5h/6TgEgCIAp1I3759Y6WCq+zPd8LNjraCH6KTYgf7
             }
 
             if (files[0].type.match(/image.*/) || files[0].name.match(/.exr$/) || files[0].name.match(/.pfm$/)) {
-                files.sort(function (a, b) {
-                    return a.name.localeCompare(b.name);
-                });
+                //files.sort(function (a, b) {
+                //    return a.name.localeCompare(b.name);
+                //});
                 if (!shiftDown) {
                     let newStream = new NvisStream(this.glContext);
                     newStream.drop(files, this.windows);
                     this.streams.push(newStream);
                     _state.animation.setNumFrames(Math.max(_state.animation.numFrames, newStream.getNumImages()));  //  TODO: check
                     this.addWindow(this.streams.length - 1);
+                    
                 } else {
                     for (let i = 0; i < files.length; i++) {
                         let newStream = new NvisStream(this.glContext);
