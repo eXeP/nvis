@@ -86,16 +86,23 @@ var nvis = new function () {
                     y: 0.0
                 }
             },
-            set: function (level = _state.zoom.level) {
+            setExact: function (level = _state.zoom.level, bPopup = true) {
                 let minLevel = (_settingsUI.bLockZoom.value ? 1.0 : _state.zoom.MinLevel);
                 _state.zoom.level = Math.min(Math.max(level, minLevel), _state.zoom.MaxLevel);
 
+                if (bPopup) {
+                    _renderer.popupInfo('zoom = ' + _state.zoom.level.toFixed(1) + 'x');
+                }
+            },
+            set: function (level = _state.zoom.level, bPopup = true) {
+                let minLevel = (_settingsUI.bLockZoom.value ? 1.0 : _state.zoom.MinLevel);
+                level = Math.min(Math.max(level, minLevel), _state.zoom.MaxLevel);
+
                 //  round to nearest power of 2^(1/8)
-                let az = Math.round(Math.log(_state.zoom.level) / Math.log(_state.zoom.LowFactor));
-                _state.zoom.level = Math.pow(_state.zoom.LowFactor, az);
-                
+                let az = Math.round(Math.log(level) / Math.log(_state.zoom.LowFactor));
+                _state.zoom.setExact(Math.pow(_state.zoom.LowFactor, az), bPopup);
+
                 // console.log('level: ' + _state.zoom.level + ',  az = ' + az);
-                _renderer.popupInfo('zoom = ' + _state.zoom.level.toFixed(1) + 'x');
             }
         },
         input: {
@@ -6576,6 +6583,25 @@ YH5TbD+cNrTGp556irMfd9BtBQnDb3HkHuGRRx5h/6TgEgCIAp1I3759Y6WCq+zPd8LNjraCH6KTYgf7
         }
 
 
+        showHorizontalHalf(side = 'left') {
+            if (this.windows.length == 0 || this.streamPxDimensions === undefined || this.winPxDimensions === undefined) {
+                return false;
+            }
+
+            let zoomLevel = (2.0 * this.winPxDimensions.w) / this.streamPxDimensions.w;
+            _state.zoom.setExact(zoomLevel, false);
+
+            let visibleHeight = this.winPxDimensions.h / (_state.zoom.level * this.streamPxDimensions.h);
+            let streamOffset = {
+                x: (side == 'right' ? 0.5 : 0.0),
+                y: Math.max((1.0 - visibleHeight) / 2.0, 0.0)
+            };
+
+            this.position(streamOffset, false);
+            return true;
+        }
+
+
         translate(canvasOffset, bPixels = true) {
 
             if (this.windows.length == 0) {
@@ -7812,7 +7838,7 @@ YH5TbD+cNrTGp556irMfd9BtBQnDb3HkHuGRRx5h/6TgEgCIAp1I3759Y6WCq+zPd8LNjraCH6KTYgf7
             this.helpPopup.innerHTML += 'Tab - open user interface, to manipulate settings, streams, and shaders<br/>';
             this.helpPopup.innerHTML += 'h - hold to show the list of keyboard shortcut commands<br/>';
             this.helpPopup.innerHTML += 'Space - toggle animation<br/>';
-            this.helpPopup.innerHTML += 'p - toggle ping-pong during animation<br/>';
+            this.helpPopup.innerHTML += 'Shift+P - toggle ping-pong during animation<br/>';
             this.helpPopup.innerHTML += 'Arrow Left/Right - step one frame forward/backwards<br/>';
             this.helpPopup.innerHTML += 'Arrow Up/Down - step between streams in the current window (under cursor)<br/>';
             this.helpPopup.innerHTML += 'g - toggle display of pixel grid when zoomed in<br/>';
@@ -7821,6 +7847,8 @@ YH5TbD+cNrTGp556irMfd9BtBQnDb3HkHuGRRx5h/6TgEgCIAp1I3759Y6WCq+zPd8LNjraCH6KTYgf7
             this.helpPopup.innerHTML += 'l - open file load dialog<br/>';
             this.helpPopup.innerHTML += 'i - toggle per-pixel information<br/>';
             this.helpPopup.innerHTML += 'a - toggle automatic layout of windows<br/>';
+            this.helpPopup.innerHTML += 'o - zoom to show the left half of the current image full-screen<br/>';
+            this.helpPopup.innerHTML += 'p - zoom to show the right half of the current image full-screen<br/>';
             this.helpPopup.innerHTML += 'z - reset zoom level to 1.0<br/>';
             this.helpPopup.innerHTML += 't - toggle showing of stream names<br/>';
             this.helpPopup.innerHTML += '+/- - increase/decrease the window layout width<br/>';
@@ -8414,7 +8442,18 @@ YH5TbD+cNrTGp556irMfd9BtBQnDb3HkHuGRRx5h/6TgEgCIAp1I3759Y6WCq+zPd8LNjraCH6KTYgf7
                     _settingsUI.bDrawGrid.value = !_settingsUI.bDrawGrid.value;
                     this.popupInfo('Draw grid: ' + (_settingsUI.bDrawGrid.value ? 'on' : 'off'));
                     break;
+                case 'o':
+                case 'O':
+                    if (this.windows.showHorizontalHalf('left')) {
+                        this.popupInfo('View: left half');
+                    }
+                    break;
                 case 'p':
+                    if (this.windows.showHorizontalHalf('right')) {
+                        this.popupInfo('View: right half');
+                    }
+                    break;
+                case 'P':
                     _state.animation.togglePingPong();
                     _settingsUI.bPingPong.value = _state.animation.pingPong;
                     this.popupInfo('Animation ping-pong: ' + (_state.animation.pingPong ? 'on' : 'off'));
