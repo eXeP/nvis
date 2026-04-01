@@ -6588,13 +6588,35 @@ YH5TbD+cNrTGp556irMfd9BtBQnDb3HkHuGRRx5h/6TgEgCIAp1I3759Y6WCq+zPd8LNjraCH6KTYgf7
                 return false;
             }
 
-            let zoomLevel = (2.0 * this.winPxDimensions.w) / this.streamPxDimensions.w;
-            _state.zoom.setExact(zoomLevel, false);
+            let visibleWidth = 1.0;
+            let offsetX = 0.0;
+            if (this.winPxDimensions.w < this.streamPxDimensions.w * _state.zoom.level) {
+                visibleWidth = this.winPxDimensions.w / (this.streamPxDimensions.w * _state.zoom.level);
+                offsetX = _state.zoom.streamOffset.x;
+            }
 
-            let visibleHeight = this.winPxDimensions.h / (_state.zoom.level * this.streamPxDimensions.h);
+            let leftVisible = Math.max(Math.min(offsetX + visibleWidth, 0.5) - Math.max(offsetX, 0.0), 0.0);
+            let rightVisible = Math.max(Math.min(offsetX + visibleWidth, 1.0) - Math.max(offsetX, 0.5), 0.0);
+
+            let currentSide = side;
+            let eps = 1e-9;
+            if (leftVisible > rightVisible + eps) {
+                currentSide = 'left';
+            } else if (rightVisible > leftVisible + eps) {
+                currentSide = 'right';
+            } else {
+                currentSide = ((offsetX + 0.5 * visibleWidth) < 0.5 ? 'left' : 'right');
+            }
+
+            if (currentSide == side) {
+                return false;
+            }
+
+            let maxOffsetX = Math.max(1.0 - visibleWidth, 0.0);
+            let deltaX = (side == 'right' ? 0.5 : -0.5);
             let streamOffset = {
-                x: (side == 'right' ? 0.5 : 0.0),
-                y: Math.max((1.0 - visibleHeight) / 2.0, 0.0)
+                x: _clamp(offsetX + deltaX, 0.0, maxOffsetX),
+                y: _state.zoom.streamOffset.y
             };
 
             this.position(streamOffset, false);
@@ -7847,8 +7869,8 @@ YH5TbD+cNrTGp556irMfd9BtBQnDb3HkHuGRRx5h/6TgEgCIAp1I3759Y6WCq+zPd8LNjraCH6KTYgf7
             this.helpPopup.innerHTML += 'l - open file load dialog<br/>';
             this.helpPopup.innerHTML += 'i - toggle per-pixel information<br/>';
             this.helpPopup.innerHTML += 'a - toggle automatic layout of windows<br/>';
-            this.helpPopup.innerHTML += 'o - zoom to show the left half of the current image full-screen<br/>';
-            this.helpPopup.innerHTML += 'p - zoom to show the right half of the current image full-screen<br/>';
+            this.helpPopup.innerHTML += 'o - flip to the left half at the current zoom level<br/>';
+            this.helpPopup.innerHTML += 'p - flip to the right half at the current zoom level<br/>';
             this.helpPopup.innerHTML += 'z - reset zoom level to 1.0<br/>';
             this.helpPopup.innerHTML += 't - toggle showing of stream names<br/>';
             this.helpPopup.innerHTML += '+/- - increase/decrease the window layout width<br/>';
